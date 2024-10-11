@@ -1,37 +1,40 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
 import express from "express";
 import { Server } from "socket.io";
 import { createServer } from "http";
-const app = express();
-const server = createServer(app);
 
+const app = express();
+const server = createServer(app); // Create an Express server
+
+// Initialize Socket.IO server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // Frontend running on port 3000
+    origin: "https://your-frontend-url.onrender.com", // Update this to your frontend's URL
     credentials: true,
     methods: ["POST", "GET"],
   },
 });
 
+// Handle Socket.IO connections
 io.on("connection", (socket) => {
   console.log("A user connected: ", socket.id);
 
-  // Listen for the message and userName from the client
-  socket.on("sendMessage", (data) => {
-    const { message, userName } = data;
-    console.log(`Message received from ${userName}: ${message}`);
+  // Emit a message to the connected client
+  socket.emit("message", "Hello User!");
 
-    // Broadcast the message along with the userName
-    io.emit("receiveMessage", { message, userName });
+  // Handle messages from clients
+  socket.on("sendMessage", (message) => {
+    console.log(`Received message: ${message}`);
+    // Broadcast message to all clients except sender
+    socket.broadcast.emit("message", message);
   });
 
-  // When the user disconnects
+  // Handle disconnection
   socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
+    console.log("User disconnected: ", socket.id);
   });
 });
 
-
+// Start the server
 server.listen(4000, () => {
   console.log("Server started on PORT", 4000);
 });
